@@ -57,9 +57,9 @@ for node in set(reverse_graph.nodes()):
 print("\nProjs to deploy:")
 pprint(projs_to_deploy)
 
-print("\nReduced graph:")
-pprint(set(reverse_graph.nodes()))
-
+print("\nTopsorted reduced graph nodes together with their downstream neighbors:")
+topsorted_reduced_graph_nodes = nx.topological_sort(reverse_graph)
+pprint([(node, list(nx.neighbors(reverse_graph, node))) for node in topsorted_reduced_graph_nodes], width=150)
 # Fill stages up with nodes of same generation, since they can be deployed in parallel. Begin with the first generation
 # of the reduced reversed dependency graph. When out of stages, fill up the roundup stage with all remaining
 # generations, in order of remaining generations, and execute all jobs in sequence (single file).
