@@ -1,0 +1,87 @@
+name: Deployment Pipeline
+on: 
+  push:
+    paths-ignore:
+      - '**/README.md'
+      - '.github/**'
+      - '.deployignore'
+      - 'dag.txt'
+jobs:
+  define_stages:
+    runs-on: ubuntu-latest
+    outputs:
+      first_stage_matrix: ${{ steps.mat_gen.outputs.stage_one }}
+      second_stage_matrix: ${{ steps.mat_gen.outputs.stage_two }}
+      third_stage_matrix: ${{ steps.mat_gen.outputs.stage_three }}
+      fourth_stage_matrix: ${{ steps.mat_gen.outputs.stage_four }}
+      fifth_stage_matrix: ${{ steps.mat_gen.outputs.stage_five }}
+      roundup_stage_matrix: ${{ steps.mat_gen.outputs.roundup }}
+    steps:
+      - uses: actions/checkout@v4.0.0
+        with:
+          fetch-depth: 2
+      - name: Node Stage Matrix Generator
+        id: mat_gen
+        run: |
+          pip install networkx
+          python .github/workflows/generate_stage_matrices.py
+
+  first_stage_deployment:
+    needs: define_stages
+    if: needs.define_stages.outputs.first_stage_matrix != ''
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJSON(needs.define_stages.outputs.first_stage_matrix) }}
+    steps:
+      - name: Deploying ${{matrix.project}}
+        run: echo "Deploying ${{matrix.project}}"
+  
+  second_stage_deployment:
+    needs: [define_stages, first_stage_deployment]
+    if: needs.define_stages.outputs.second_stage_matrix != ''
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{  fromJSON(needs.define_stages.outputs.second_stage_matrix) }}
+    steps:
+      - name: Deploying ${{matrix.project}}
+        run: echo "Deploying ${{matrix.project}}"
+
+  third_stage_deployment:
+    needs: [define_stages, second_stage_deployment]
+    if: needs.define_stages.outputs.third_stage_matrix != ''
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{  fromJSON(needs.define_stages.outputs.third_stage_matrix) }}
+    steps:
+      - name: Deploying ${{matrix.project}}
+        run: echo "Deploying ${{matrix.project}}"
+
+  fourth_stage_deployment:
+    needs: [define_stages, third_stage_deployment]
+    if: needs.define_stages.outputs.fourth_stage_matrix != ''
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{  fromJSON(needs.define_stages.outputs.fourth_stage_matrix) }}
+    steps:
+      - name: Deploying ${{matrix.project}}
+        run: echo "Deploying ${{matrix.project}}"
+
+  fifth_stage_deployment:
+    needs: [define_stages, fourth_stage_deployment]
+    if: needs.define_stages.outputs.fifth_stage_matrix != ''
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{  fromJSON(needs.define_stages.outputs.fifth_stage_matrix) }}
+    steps:
+      - name: Deploying ${{matrix.project}}
+        run: echo "Deploying ${{matrix.project}}"
+
+  roundup_stage_deployment:
+    needs: [define_stages, fifth_stage_deployment]
+    if: needs.define_stages.outputs.roundup_stage_matrix != ''
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{  fromJSON(needs.define_stages.outputs.roundup_stage_matrix) }}
+    steps:
+      - name: Deploying ${{matrix.project}}
+        run: echo "Deploying ${{matrix.project}}"
