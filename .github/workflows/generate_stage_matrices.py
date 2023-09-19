@@ -41,18 +41,22 @@ with open(dagdata_path, 'r') as dagdata:
 # Reverse direction of edges to get nodes in order of advisable deployment, since it is a dependency graph.
 reverse_graph = graph.reverse()
 
-# We want to deploy AT LEAST all projects that where changed if they weren't in the ignore file.
+# Remove all nodes that are ignored from the tree.
+for node in ignored_projs_set:
+    reverse_graph.remove_node(node)
+
 projs_to_deploy = changed_projs_set - ignored_projs_set
-for node in reverse_graph.nodes():
-    if node in projs_to_deploy:
-        # Also deploy all their descendants that aren't ignored.
-        projs_to_deploy = projs_to_deploy.union(set(nx.descendants(reverse_graph, node)) - ignored_projs_set)
+for node in projs_to_deploy:
+    projs_to_deploy = projs_to_deploy.union(set(nx.descendants(reverse_graph, node)))
+
+# Remove all superfluous nodes from the graph.
+for node in set(reverse_graph.nodes()):
+    if node not in projs_to_deploy:
+        reverse_graph.remove_node(node)
+
 print("\nProjs to deploy:")
 pprint(projs_to_deploy)
 
-# Now remove all nodes we don't want to deploy from our graph, to get our minimal deployment pipeline.
-for node in set(set(reverse_graph.nodes()) - projs_to_deploy):
-    reverse_graph.remove_node(node)
 print("\nReduced graph:")
 pprint(set(reverse_graph.nodes()))
 
