@@ -15,7 +15,7 @@ cmd = subprocess.run(["git", "diff-tree", "--no-commit-id", "--name-only", "-r",
                      check=True)
 
 # Filter out changed paths that are not projects, or that are README.md files.
-ign = re.compile("^(\\.github/.*|README\\.md|.*/README\\.md)$")
+ign = re.compile("^(\\..*/.*|README\\.md|.*/README\\.md)$")
 changed_projs_set = set()
 for row in cmd.stdout.splitlines():
     if "/" in row and not re.fullmatch(ign, row):
@@ -45,17 +45,21 @@ reverse_graph = graph.reverse()
 for node in ignored_projs_set:
     reverse_graph.remove_node(node)
 
-projs_to_deploy = changed_projs_set - ignored_projs_set
-for node in projs_to_deploy:
-    projs_to_deploy = projs_to_deploy.union(set(nx.descendants(reverse_graph, node)))
+# Determine which of the modified projects we actually want to deploy.
+modified_projs_to_deploy = changed_projs_set - ignored_projs_set
+
+# Add all their descendants to get all the projects to deploy.
+all_projs_to_deploy = modified_projs_to_deploy.copy()
+for node in modified_projs_to_deploy:
+    all_projs_to_deploy = all_projs_to_deploy.union(set(nx.descendants(reverse_graph, node)))
 
 # Remove all superfluous nodes from the graph.
 for node in set(reverse_graph.nodes()):
-    if node not in projs_to_deploy:
+    if node not in all_projs_to_deploy:
         reverse_graph.remove_node(node)
 
-print("\nProjs to deploy:")
-pprint(projs_to_deploy)
+print("\nAll projs to deploy:")
+pprint(all_projs_to_deploy)
 
 print("\nTopsorted reduced graph nodes together with their downstream neighbors:")
 topsorted_reduced_graph_nodes = nx.topological_sort(reverse_graph)
